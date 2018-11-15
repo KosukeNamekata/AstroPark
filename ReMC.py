@@ -224,8 +224,10 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     #Initial t_spot_area_is_max is set to be located along the order (t0<t1<t2<...<tN)
     t_min = thetamin[number_of_spot*5]
     t_max = thetamax[number_of_spot*5]
-    t_step = (np.array(range(number_of_spot))+0.5)/number_of_spot*(t_max-t_min)
-    theta[(number_of_spot*5):(number_of_spot*6)] = t_step[:]
+    #t_step = (np.array(range(number_of_spot))+0.5)/number_of_spot*(t_max-t_min)
+    t_step = np.random.uniform(thetamin[number_of_spot*5: number_of_spot*6], thetamax[number_of_spot*5: number_of_spot*6])
+    t_step.sort()
+    theta[(number_of_spot*5):(number_of_spot*6)] = copy.copy(t_step[:])
 
     #set with the list format...
     sigma0list = sigma0.tolist()
@@ -249,8 +251,10 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     likelihood.append(-500000)
     
     for jj in range(size_replica-1):
+        t_step = np.random.uniform(thetamin[number_of_spot*5: number_of_spot*6], thetamax[number_of_spot*5: number_of_spot*6])
+        t_step.sort()
         theta_random = np.random.uniform(thetamin, thetamax)
-        theta_random[(number_of_spot*5):(number_of_spot*6)] = t_step[:]
+        theta_random[(number_of_spot*5):(number_of_spot*6)] = copy.copy(t_step[:])
         theta_prev.extend( copy.copy( theta_random.tolist() ) )
         sigma0list.extend( sigma0.tolist() )
     
@@ -382,3 +386,5 @@ def input_parameter(amax, emerge, decay, period, t_max, t_min, number_of_spot):
     thetamin = np.hstack((amax*np.ones(number_of_spot)*0.05, np.ones(number_of_spot)*0, emerge*np.ones(number_of_spot)*0.05, decay*np.ones(number_of_spot)*5, period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
     thetamax = np.hstack((amax*np.ones(number_of_spot)*5, np.ones(number_of_spot)*period, emerge*np.ones(number_of_spot)*5, decay*np.ones(number_of_spot)*0.05, period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
     return thetamin, thetamax, sigma
+
+
