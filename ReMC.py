@@ -117,7 +117,7 @@ def Probability(theta, x, y, thetamin, thetamax, n_loop, inverse_temperature, nu
 
 
 #Randomly select the next step of MCMC
-def Q(c, mu, sigma, thetamin, thetamax, number_of_spot):
+def Q(c, mu, sigma, thetamin, thetamax, number_of_spot,parameter_priority):
     a = c + np.random.normal(mu, sigma)
     num_errors = 0
     for kk in range(len(a)):
@@ -134,7 +134,7 @@ def Q(c, mu, sigma, thetamin, thetamax, number_of_spot):
     #In this part, the exchange of Spot A-B to Spot B-A is avoided for the artifitial bimodality of posterior distribution.
     #We used the peak time as the order of the spots, but there may another appropriate way to escape this problem.        
     for jj in range(number_of_spot):
-        index = jj+number_of_spot*5
+        index = jj+number_of_spot*parameter_priority
         if (jj==0): continue
         if (a[index] < a[index-1]):
             a[index] = copy.copy(a[index-1])
@@ -159,6 +159,7 @@ def metropolis(inputs):
     loop_number_out_replica = inputs[10]
     scale_parameter = inputs[11]
     number_of_spot = inputs[12]
+    parameter_priority = inputs[13]
 
     current = theta0.tolist() 
     candidate = theta0.tolist() 
@@ -175,7 +176,7 @@ def metropolis(inputs):
 
     while (i <  N):
         
-        candidate = Q(np.array(current), np.zeros(len(theta0)), sigma*scale_parameter, thetamin, thetamax, number_of_spot)
+        candidate = Q(np.array(current), np.zeros(len(theta0)), sigma*scale_parameter, thetamin, thetamax, number_of_spot, parameter_priority)
 
         if (i  == 0):
             T_prev = Probability(np.array(current), x, y, thetamin, thetamax, int(visualize), inverse_temperature, number_of_spot)
@@ -215,19 +216,19 @@ def metropolis(inputs):
 
 
 def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, number_of_spot = 5,
-    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4):
+    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4, parameter_priority = 5):
 
     theta = np.random.uniform(thetamin, thetamax)
     number_of_parameter = number_of_spot*6
     scale_parameter = np.ones(size_replica)
 
     #Initial t_spot_area_is_max is set to be located along the order (t0<t1<t2<...<tN)
-    t_min = thetamin[number_of_spot*5]
-    t_max = thetamax[number_of_spot*5]
+    t_min = thetamin[number_of_spot*parameter_priority]
+    t_max = thetamax[number_of_spot*parameter_priority]
     #t_step = (np.array(range(number_of_spot))+0.5)/number_of_spot*(t_max-t_min)
-    t_step = np.random.uniform(thetamin[number_of_spot*5: number_of_spot*6], thetamax[number_of_spot*5: number_of_spot*6])
+    t_step = np.random.uniform(thetamin[number_of_spot*parameter_priority: number_of_spot*(parameter_priority+1)], thetamax[number_of_spot*(parameter_priority): number_of_spot*(parameter_priority+1)])
     t_step.sort()
-    theta[(number_of_spot*5):(number_of_spot*6)] = copy.copy(t_step[:])
+    theta[(number_of_spot*parameter_priority):(number_of_spot*(parameter_priority+1))] = copy.copy(t_step[:])
 
     #set with the list format...
     sigma0list = sigma0.tolist()
@@ -251,10 +252,13 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     likelihood.append(-500000)
     
     for jj in range(size_replica-1):
-        t_step = np.random.uniform(thetamin[number_of_spot*5: number_of_spot*6], thetamax[number_of_spot*5: number_of_spot*6])
-        t_step.sort()
+        #t_step = np.random.uniform(thetamin[number_of_spot*5: number_of_spot*6], thetamax[number_of_spot*5: number_of_spot*6])
+        #t_step.sort()
+        t_step = np.random.uniform(thetamin[number_of_spot*parameter_priority: number_of_spot*(parameter_priority+1)], thetamax[number_of_spot*(parameter_priority): number_of_spot*(parameter_priority+1)])
+        tstep.sort()
+
         theta_random = np.random.uniform(thetamin, thetamax)
-        theta_random[(number_of_spot*5):(number_of_spot*6)] = copy.copy(t_step[:])
+        theta_random[(number_of_spot*parameter_priority):(number_of_spot*(parameter_priority+1))] = copy.copy(t_step[:])
         theta_prev.extend( copy.copy( theta_random.tolist() ) )
         sigma0list.extend( sigma0.tolist() )
     
@@ -263,7 +267,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     
     for kk in range( int(size_simulation/frequency_exchange) ):
         #初期化
-        if ((kk % 100) == 0): print("Repluca Routine: No. ", kk)
+        if ((kk % 1000) == 0): print("Repluca Routine: No. ", kk)
         theta_next = []
         
         #レプリカ数に応じて、**並行して**ループを回す。
@@ -273,7 +277,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
                 sigma[index_replica*number_of_parameter:(index_replica+1)*number_of_parameter],
                 np.array(theta_prev[index_replica*number_of_parameter:(index_replica+1)*number_of_parameter]),
                 thetamax, thetamin, inverse_temperature[index_replica], visualize[index_replica],kk*frequency_exchange, 
-                scale_parameter[index_replica], number_of_spot])
+                scale_parameter[index_replica], number_of_spot, parameter_priority])
 
         p = Pool(core_of_your_computer)
         outputs = p.map( metropolis, inputs )
@@ -382,7 +386,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
 
 ##Parameter tuning is one of the most important task!!
 def input_parameter(amax, emerge, decay, period, t_max, t_min, number_of_spot):
-    sigma = np.hstack((np.ones(number_of_spot)*0.001,np.ones(number_of_spot)*0.01*period, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*10))
+    sigma = np.hstack((np.ones(number_of_spot)*0.01,np.ones(number_of_spot)*0.01*period, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*10))
     thetamin = np.hstack((amax*np.ones(number_of_spot)*0.05, np.ones(number_of_spot)*0, emerge*np.ones(number_of_spot)*0.05, decay*np.ones(number_of_spot)*5, period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
     thetamax = np.hstack((amax*np.ones(number_of_spot)*5, np.ones(number_of_spot)*period, emerge*np.ones(number_of_spot)*5, decay*np.ones(number_of_spot)*0.05, period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
     return thetamin, thetamax, sigma
