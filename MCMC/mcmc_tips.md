@@ -7,10 +7,9 @@
 かといって、勾配降下法では、高確率で、極所解に陥ってしまう(さらにエラーももとまらない)。**MCMCだと（完全ではないものの）広い空間を限られた時間で探索できる**。  
 
 ### ＊Parallel Tempering
-- parallel temperingのHyperparameter(逆温度)の調整は、基本的に、Araki et al. 2013に従えばいい。  
+- parallel temperingのHyperparameter(逆温度)の調整は、基本的に、Araki et al. 2013に従えばいい。ただし、レプリカの数は、パラメータの数のルート(e.g.,parameter number=50, replica number=7とかでいいのか、、)が「数学的には」最適らしい。　また、初期値は、exp(0), exp(1), exp(2)...とするのがいいらしい。　　
 
-- ただし、レプリカの数は、パラメータの数のルート(e.g.,parameter number=50, replica number=7とかでいいのか、、)が「数学的には」最適らしい。
-また、初期値は、exp(0), exp(1), exp(2)...とするのがいいらしい。　　
+- 提案分布の分散の初期値は本来予想される値よりも大きめの値からスタートするのが良い、と聞いたことがある。学習して適切な値まで小さくなって行くので、最初から小さい値にすると学習の効果がない。逆温度の初期値に関しては、最小の値の設定がまずは重要。パラメータ空間を十分自由に動けるような値で最小の逆温度の値を設定すべきで、具体的な値は試行錯誤するしかないと思います。逆温度は一般的には「対数スケールで等間隔」に設定するのが良いそうだが、特に相転移が起きそうな温度付近は密に刻むべき。  
 
 - temperingの逆温度は、adaptiveで動かすことが多いが、an=1/(burn_in*iteration_number + n)とかにするとよい。
 ここで、nは要らないように見えるが、数学的には、an(n→∞)=0, Σan(n→∞)=∞である数列の方が好ましい。
@@ -42,5 +41,7 @@ https://ja.wikipedia.org/wiki/%E3%83%99%E3%82%A4%E3%82%BA%E5%9B%A0%E5%AD%90　�
 https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　  
 簡単な例(広島カープ)を使って解説　　  
 https://www.slideshare.net/kazutantan/bayes-factor　　
+
+
 
 
