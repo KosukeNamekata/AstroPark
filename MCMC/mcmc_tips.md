@@ -28,7 +28,9 @@ https://ja.wikipedia.org/wiki/%E3%83%99%E3%82%A4%E3%82%BA%E5%9B%A0%E5%AD%90　�
 データベクトルx に基づいて2つの数学的モデル M1 と M2 のどちらかを選択する問題を考える。
 この方法は尤度比検定あるいは最尤法に似ているが、尤度（モデルあるいは母数を定数とし、それを条件とする確率変数x の条件付確率のこと）を最大化するのでなく、母数を確率変数とし、それに対して平均値をとってから最大化するところが違う。
 
-- 基準は以下より、、　　
-https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　
+- 基準は以下より、、  
+https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　  
+簡単な例(広島カープ)を使って解説　　  
+https://www.slideshare.net/kazutantan/bayes-factor　　
 
 
