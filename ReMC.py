@@ -48,10 +48,10 @@ def spotcandedate2(times, nmax, emergence_rates, decay_rates, amax):
 def Probability(theta, x, y, thetamin, thetamax, n_loop, inverse_temperature, number_of_spot):
     
     #These are the parameter selected with MCMC in this loop
-    amax = theta[0:number_of_spot]
+    amax = np.exp(theta[0:number_of_spot])
     t_max = theta[number_of_spot:(number_of_spot*2)]
-    emerge = theta[(number_of_spot*2):(number_of_spot*3)]
-    decay = theta[(number_of_spot*3):(number_of_spot*4)]
+    emerge = np.exp(theta[(number_of_spot*2):(number_of_spot*3)])
+    decay = np.exp(theta[(number_of_spot*3):(number_of_spot*4)])
     rot_period = theta[(number_of_spot*4):(number_of_spot*5)]
     t_max_area = theta[(number_of_spot*5):(number_of_spot*6)]
     
@@ -69,7 +69,7 @@ def Probability(theta, x, y, thetamin, thetamax, n_loop, inverse_temperature, nu
     number_of_local_min = 200
 
     #This modeling can cover less than 400 days (but parameters were selected for 200 days' Kepler-17 data).
-    timespan = [0,400]
+    timespan = [0, (np.max(x) - np.max(x))]
 
     #Here, we made the spot areal temporal evolutions by "spotcandidate2" method.
     for ii in range(number_of_spot):
@@ -160,6 +160,7 @@ def metropolis(inputs):
     scale_parameter = inputs[11]
     number_of_spot = inputs[12]
     parameter_priority = inputs[13]
+    burn_in_adaptive = inputs[14]
 
     current = theta0.tolist() 
     candidate = theta0.tolist() 
@@ -194,7 +195,7 @@ def metropolis(inputs):
             likelihood.append(T_prev)
             
         #Adaptive Part: 次のステップの分散(と言うより、ここでは標準偏差)を計算する。
-        bn = 10/(100+loop_number) #Araki et al とは少し違うが、これでも十分だと判断
+        bn = 1/(burn_in_adaptive+loop_number) #Araki et al とは少し違うが、これでも十分だと判断
         mu += bn*(candidate - mu)
         sigma_prev = copy.copy(sigma)
         sigma = np.abs( ( sigma**2 + bn*( (candidate - mu)**2 - sigma**2 ) )**0.5 )
@@ -216,11 +217,12 @@ def metropolis(inputs):
 
 
 def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, number_of_spot = 5,
-    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4, parameter_priority = 5):
+    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4, parameter_priority = 5, burn_in=0.2 ):
 
     theta = np.random.uniform(thetamin, thetamax)
     number_of_parameter = number_of_spot*6
     scale_parameter = np.ones(size_replica)
+    burn_in_adaptive = int(burn_in*size_simulation)
 
     #Initial t_spot_area_is_max is set to be located along the order (t0<t1<t2<...<tN)
     t_min = thetamin[number_of_spot*parameter_priority]
@@ -234,7 +236,8 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     sigma0list = sigma0.tolist()
     theta_prev = theta.tolist()
     #Here, we set the initial inverse_temperature (which will be adaptively modified in every exchange)
-    inverse_temperature = (np.array(range(size_replica, 0, -1)))/size_replica*0.01*100
+    #inverse_temperature = (np.array(range(size_replica, 0, -1)))/size_replica*0.01*100 #等間隔なら、これくらい。
+    inverse_temperature = np.exp(-np.array(range(0, size_replica, 1))) #Ikuta method.
     orders = np.array(range(size_replica))
     condition = [copy.copy(orders.tolist())]
     theta_next = []
@@ -255,7 +258,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
         #t_step = np.random.uniform(thetamin[number_of_spot*5: number_of_spot*6], thetamax[number_of_spot*5: number_of_spot*6])
         #t_step.sort()
         t_step = np.random.uniform(thetamin[number_of_spot*parameter_priority: number_of_spot*(parameter_priority+1)], thetamax[number_of_spot*(parameter_priority): number_of_spot*(parameter_priority+1)])
-        tstep.sort()
+        t_step.sort()
 
         theta_random = np.random.uniform(thetamin, thetamax)
         theta_random[(number_of_spot*parameter_priority):(number_of_spot*(parameter_priority+1))] = copy.copy(t_step[:])
@@ -277,7 +280,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
                 sigma[index_replica*number_of_parameter:(index_replica+1)*number_of_parameter],
                 np.array(theta_prev[index_replica*number_of_parameter:(index_replica+1)*number_of_parameter]),
                 thetamax, thetamin, inverse_temperature[index_replica], visualize[index_replica],kk*frequency_exchange, 
-                scale_parameter[index_replica], number_of_spot, parameter_priority])
+                scale_parameter[index_replica], number_of_spot, parameter_priority, burn_in_adaptive])
 
         p = Pool(core_of_your_computer)
         outputs = p.map( metropolis, inputs )
@@ -386,9 +389,9 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
 
 ##Parameter tuning is one of the most important task!!
 def input_parameter(amax, emerge, decay, period, t_max, t_min, number_of_spot):
-    sigma = np.hstack((np.ones(number_of_spot)*0.01,np.ones(number_of_spot)*0.01*period, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*10))
-    thetamin = np.hstack((amax*np.ones(number_of_spot)*0.05, np.ones(number_of_spot)*0, emerge*np.ones(number_of_spot)*0.05, decay*np.ones(number_of_spot)*5, period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
-    thetamax = np.hstack((amax*np.ones(number_of_spot)*5, np.ones(number_of_spot)*period, emerge*np.ones(number_of_spot)*5, decay*np.ones(number_of_spot)*0.05, period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
+    sigma = np.hstack((np.ones(number_of_spot)*0.05, np.ones(number_of_spot)*0.01*period, np.ones(number_of_spot)*0.051, np.ones(number_of_spot)*0.05, np.ones(number_of_spot)*0.01, np.ones(number_of_spot)*20))
+    thetamin = np.hstack((np.log(amax*np.ones(number_of_spot)*0.01), np.ones(number_of_spot)*0, np.log(emerge*np.ones(number_of_spot)*0.01), np.log(-decay*np.ones(number_of_spot)*0.01), period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
+    thetamax = np.hstack((np.log(amax*np.ones(number_of_spot)*5), np.ones(number_of_spot)*period, np.log(emerge*np.ones(number_of_spot)*10), np.log(-decay*np.ones(number_of_spot)*10), period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
     return thetamin, thetamax, sigma
 
 
