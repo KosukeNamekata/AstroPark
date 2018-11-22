@@ -6,7 +6,46 @@
 -- パラメータ次元が多すぎて、カイ2乗推定では、サーベイするパラメータレンジが膨大すぎて、計算が爆発してしまう。
 かといって、勾配降下法では、高確率で、極所解に陥ってしまう(さらにエラーももとまらない)。**MCMCだと（完全ではないものの）広い空間を限られた時間で探索できる**。  
 
+### ＊MCMCの手法  
+- メトロポリス・ヘイスティング　　
+- メトロポリス　　
+- ギブス　　
+
+- MCMCの採択確率は25%、交換確率は50%になるように提案分布の分散パラメータや逆温度パラメータを設定するのが適切?
+
+### ＊関連文献  
+Radial Velocityをモデリングする論文  
+http://adsabs.harvard.edu/abs/2005ApJ...631.1198G  
+http://adsabs.harvard.edu/abs/2005AJ....129.1706F  
+http://adsabs.harvard.edu/abs/2006ApJ...642..505F  
+
+Bayesianモデリングの本  
+http://adsabs.harvard.edu/abs/2005blda.book.....G  
+
+MCMC全体のReview論文  
+http://adsabs.harvard.edu/abs/2017ARA%26A..55..213S  
+
+MCMCによる黒点モデリング論文  
+http://adsabs.harvard.edu/abs/2006PASP..118.1351C  
+
+MCMCのオープンコード(Corner plotが簡単に書ける)、十数パラメータ位ならこちらで可能　　
+http://adsabs.harvard.edu/abs/2013PASP..125..306F
+
+解析的な黒点モデル論文　　
+http://adsabs.harvard.edu/abs/2012MNRAS.427.2487K
+
+黒点パラメータの縮退を議論した論文　　
+http://adsabs.harvard.edu/abs/2013ApJS..205...17W　　　　
+
+山田さん(植村さんの学生さん)のadaptive MCMCのproceeding(論文は準備中だそうです)　　
+http://adsabs.harvard.edu/abs/2017ifs..confE..30Y　　
+
+### ＊収束判定  
+- 収束性はTrace plotを目視で判断していますが、厳密にはGelman-Robin の収束判定法があります。  
+
 ### ＊Parallel Tempering
+- 交換頻度は経験的に10-20%くらいが適切。交換頻度が大きすぎると交換ばかり起こってパラメータが推移しなくなり、逆に頻度が小さくなると局所解に長い間トラップされるようになります。  
+
 - parallel temperingのHyperparameter(逆温度)の調整は、基本的に、Araki et al. 2013に従えばいい。ただし、レプリカの数は、パラメータの数のルート(e.g.,parameter number=50, replica number=7とかでいいのか、、)が「数学的には」最適らしい。　また、初期値は、exp(0), exp(1), exp(2)...とするのがいいらしい。　　
 
 - 提案分布の分散の初期値は本来予想される値よりも大きめの値からスタートするのが良い、と聞いたことがある。学習して適切な値まで小さくなって行くので、最初から小さい値にすると学習の効果がない。逆温度の初期値に関しては、最小の値の設定がまずは重要。パラメータ空間を十分自由に動けるような値で最小の逆温度の値を設定すべきで、具体的な値は試行錯誤するしかないと思います。逆温度は一般的には「対数スケールで等間隔」に設定するのが良いそうだが、特に相転移が起きそうな温度付近は密に刻むべき。  
