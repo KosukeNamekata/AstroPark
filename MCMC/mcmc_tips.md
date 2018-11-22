@@ -136,4 +136,11 @@ https://www.slideshare.net/kazutantan/bayes-factor　　
 
 - tempering temperatureよりも、standard deviationの方が、早めに動いた方がいいかもしれない。というか、全体的に大きく動くようにした方がいいのかもしれない。ただ、全体的に早く動かすと、temperingで動きにくくなるのではないかと思う。やっぱり、レプリカの数は大きくした方がいいのかもしれない。
 
+- 変更すべきパラメータ:  
+(1)**標準偏差in提案分布**, (2)**Adaptiveの数列×2**, (3)**黒点の数**  
+(3)は、Bayes Factorを計算して対処。これは一番最後にすればいい。
+(1)は、少し広めにとるのが、いい。そして、adaptiveで調整していくのがいいでしょう。
+(2)が一番厄介かもしれない。burn_inの内である程度修正できれば十分。
+なので、exp(-t/burn_in_sample)×a_n, a_n=1/(burn_in_sample+n)とかの方がいいかも。
+
 
