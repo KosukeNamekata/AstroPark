@@ -126,7 +126,7 @@ https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　
 https://www.slideshare.net/kazutantan/bayes-factor　　
 
 
-### ＊疑問点・勉強すべきこと  
+### ＊疑問点・勉強すべきこと・研究コメント  
 
 - 共分散行列を入れるとはどういうことか？　　  
 
@@ -134,6 +134,6 @@ https://www.slideshare.net/kazutantan/bayes-factor　　
 
 - 細かいところの引用文献  
 
-- 
+- tempering temperatureよりも、standard deviationの方が、早めに動いた方がいいかもしれない。というか、全体的に大きく動くようにした方がいいのかもしれない。ただ、全体的に早く動かすと、temperingで動きにくくなるのではないかと思う。やっぱり、レプリカの数は大きくした方がいいのかもしれない。
 
 
