@@ -31,10 +31,10 @@ http://adsabs.harvard.edu/abs/2006PASP..118.1351C
 MCMCのオープンコード(Corner plotが簡単に書ける)、十数パラメータ位ならこちらで可能　　
 http://adsabs.harvard.edu/abs/2013PASP..125..306F
 
-解析的な黒点モデル論文　　
+解析的な黒点モデル論文    
 http://adsabs.harvard.edu/abs/2012MNRAS.427.2487K
 
-黒点パラメータの縮退を議論した論文　　
+黒点パラメータの縮退を議論した論文  
 http://adsabs.harvard.edu/abs/2013ApJS..205...17W　　　　
 
 山田さん(植村さんの学生さん)のadaptive MCMCのproceeding(論文は準備中だそうです)　　
