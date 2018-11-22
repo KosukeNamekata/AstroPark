@@ -125,5 +125,16 @@ https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　
 https://www.slideshare.net/kazutantan/bayes-factor　　
 
 
+### ＊疑問点・勉強すべきこと  
+
+- 共分散行列を入れるとはどういうことか？　　 
+
+- ギブス・サンプラーをは何者か？メトロポリス・ギブスサンプラーの違いを明確に！  
+
+- 提案分布を変更した時に、どのようにメトロポリスに反映させればいいか？  
+
+- 細かいところの引用文献  
+
+- 
 
 
