@@ -20,7 +20,9 @@
 -- 「Stan」はpythonにもRにも施されていて、初速度を与えて、ブラーンと力学運動させる。それを繰り返すことで、効率よくマッピングするらしい。    
 
 ### ＊今回とる手法: **Metropolis MCMC with Adaptive Algorithm and Parallel Tempering**  
+![mcmc1](https://user-images.githubusercontent.com/44762667/48882516-161aed00-ee5e-11e8-9ba5-bf181b5222ec.png)
 
+![mcmc2](https://user-images.githubusercontent.com/44762667/48882518-1dda9180-ee5e-11e8-8ea9-16b3043525ac.png)
 
 -- MCMCの採択確率は25%、交換確率は50%になるように提案分布の分散パラメータや逆温度パラメータを設定するのが適切?
 
