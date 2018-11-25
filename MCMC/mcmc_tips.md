@@ -18,7 +18,9 @@
 
 - ベイズの事後分布において最も高い点（map推定値）を求めるということは、尤度が最も高い点を見つけるということ、つまり、MCMCで最適解を求めるということとイコール。
 
-- 度たび、bayesian analysisは、proposal distributionの決定に困難があり、**これは現在でももっともよく研究されていて、需要が高い分野である**が、未だに確固たる王道の理論があるわけではない。
+- 度たび、bayesian analysisは、proposal distributionの決定に困難があり、**これは現在でももっともよく研究されていて、需要が高い分野である**が、未だに確固たる王道の理論があるわけではない。  
+
+- 事前情報が全くない場合は、一様分布を用いる(see, Kass & Wasserman 1996, for review)。priorの決定には、the Jeffreys ruleというものがある。
 
 ## 2. MCMCの手法  
 - メトロポリス・ヘイスティング(MH、とも):　**直接サンプリングするのが難しい確率分布から統計標本の配列を生成するのに用いられるマルコフ連鎖を構築するのに用いられる手法の総称**。この配列はマルコフ連鎖モンテカルロ法において、目標分布の近似（ヒストグラム）として用いられたり、期待値のような積分計算を必要とするものに用いられる。
@@ -76,7 +78,8 @@
 
 ## 3. モデルの比較
 
-- モデルの比較には、「**ベイズファクター**」を比較するのが良い。例えば、ベイスファクターは、B(n,n+1) = p(D|M2)/p(D|M1)として書かれる。
+- モデルの比較には、「**ベイズファクター**」を比較するのが良い(for a review and a guide to interpreting the Bayes factor, see Kass & Raftery 1995)。
+例えば、ベイスファクターは、B(n,n+1) = p(D|M2)/p(D|M1)として書かれる。
 ここで、分母分子は、∮(Likelihood)×(Prior)dΘ(i.e.全空間積分)として計算できる。これが、「**大きいもの**」を選べば良い。　　
 https://ja.wikipedia.org/wiki/%E3%83%99%E3%82%A4%E3%82%BA%E5%9B%A0%E5%AD%90　　
 
@@ -89,6 +92,11 @@ https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　
 簡単な例(広島カープ)を使って解説　　  
 https://www.slideshare.net/kazutantan/bayes-factor　　
 
+- ただし、ほとんどの場合、ベイズファクターを計算するのは、困難である。よって、BIC条件などが基準んい使われる。これを最小化するように、パラメータを選べば良い。パラメータで記述されたモデルのクラスからモデルを選択する基準．Schwarz情報量規準とも呼ばれる． k 個のパラメータをもつ分布 f(x|θ) に従って N 個のデータがサンプルされているとき，次式を最大化するモデルを選択する。
+```
+BIC=−2log(Pr[{x}N|θ])+klogN  
+```
+ただし，Pr[{x}N|θ] は尤度。(参考　http://ibisforest.org/index.php?BIC　)  
 
 
 ## 4. MCMCの収束判定(Convergence, i.e., how long should we run an MCMC chain?, see Cowles & Carlin (1996) for review)    
