@@ -78,8 +78,8 @@
 
 ## 3. モデルの比較
 
-- モデルの比較には、「**ベイズファクター**」を比較するのが良い(for a review and a guide to interpreting the Bayes factor, see Kass & Raftery 1995)。
-例えば、ベイスファクターは、B(n,n+1) = p(D|M2)/p(D|M1)として書かれる。
+#### ★ベイズファクター(for a review and a guide to interpreting the Bayes factor, see Kass & Raftery 1995)。
+ベイスファクターは、B(n,n+1) = p(D|M2)/p(D|M1)として書かれる。
 ここで、分母分子は、∮(Likelihood)×(Prior)dΘ(i.e.全空間積分)として計算できる。これが、「**大きいもの**」を選べば良い。　　
 https://ja.wikipedia.org/wiki/%E3%83%99%E3%82%A4%E3%82%BA%E5%9B%A0%E5%AD%90　　
 
@@ -92,12 +92,15 @@ https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　
 簡単な例(広島カープ)を使って解説　　  
 https://www.slideshare.net/kazutantan/bayes-factor　　
 
-- ただし、ほとんどの場合、ベイズファクターを計算するのは、困難である。よって、BIC条件などが基準んい使われる。これを最小化するように、パラメータを選べば良い。パラメータで記述されたモデルのクラスからモデルを選択する基準．Schwarz情報量規準とも呼ばれる． k 個のパラメータをもつ分布 f(x|θ) に従って N 個のデータがサンプルされているとき，次式を最大化するモデルを選択する。
+- ただし、ほとんどの場合、ベイズファクターを計算するのは、困難である。よって、BIC条件などが基準んい使われる。これを最小化するように、パラメータを選べば良い。パラメータで記述されたモデルのクラスからモデルを選択する基準．Schwarz情報量規準とも呼ばれる． k 個のパラメータをもつ分布 f(x|θ) に従って N 個のデータがサンプルされているとき，次式を最大化するモデルを選択する。ただし，Pr[{x}N|θ] は尤度。(参考　http://ibisforest.org/index.php?BIC　)  
 ```
 BIC=−2log(Pr[{x}N|θ])+klogN  
 ```
-ただし，Pr[{x}N|θ] は尤度。(参考　http://ibisforest.org/index.php?BIC　)  
 
+
+#### ★Predictive methods
+
+- Bayesian methodも、predictive methodも、利点と欠点の両方を備えている。もし、事前分布がよく正当化されているのであれば、bayesian factorを比較するのが良い。一方、もし我々の目的が、将来のデータに対する正確な予言であるならば、predictive methodがベターであろう。　　
 
 ## 4. MCMCの収束判定(Convergence, i.e., how long should we run an MCMC chain?, see Cowles & Carlin (1996) for review)    
 
