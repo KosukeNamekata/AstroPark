@@ -125,6 +125,16 @@ https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　
 簡単な例(広島カープ)を使って解説　　  
 https://www.slideshare.net/kazutantan/bayes-factor　　
 
+### ＊MCMCの収束判定(Convergence, i.e., how long should we run an MCMC chain?, see Cowles & Carlin (1996) for review)  
+
+- 残念ながら、収束性を検出する手法はないが、**収束失敗しているのを判定することはできる**。収束判定は必要条件ではあるが、十分条件ではない。  
+
+1. *Effective sample size*
+- Autocorrelation fucntionを見てみると、correlated distributionに対しては、exp(-t/t_x)となる。
+この、Autocorrelation functionを、全空間積分することで、得られる*T*を用いて、**ESS(Effective Sample Size)=N/2Tが、1000<ESS<4000程度になるのが理想**（see, e.g. Sokal 1997)。  
+
+2. *Variance between chains*...Gelman-Robinの収束判定法  
+- 最も広く使われている方法
 
 ### ＊疑問点・勉強すべきこと・研究コメント  
 
