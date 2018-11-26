@@ -50,6 +50,14 @@
 
   - Gibbs samplingは、複数のステップに分けられる。それぞれのステップにて、一つ一つパラメータをアップデートする。
 
+- **Affine invariant sampling　/ ensemble sampler　(Gilks, Roberts & George 1994, Goodman & Weare 2010)**  
+
+  - multiple chains (walkers) are run in parallel but allowed to interact in such a way that they can adapt their proposal densities. (Parallel temperingと似ているが、　proposal densityのみをやりとり捨という点で、異なる。)　　
+  
+  - A python implementation of this (emcee: the MCMC hammer, http://dan.iel.fm/emcee/current/) is provided by Foreman-Mackey et al. (2013) and is widely used in astronomy.  　　
+  
+  - 
+
 - 他にも、スライスサンプリング, ハイブリッドモンテカルロ, MTM アルゴリズム
 
 - **Hamiltonian・モンテカルロ法**: 「Stan」初速度を与えて、ブラーンと力学運動させる。それを繰り返すことで、効率よくマッピングするらしい。  
