@@ -92,29 +92,29 @@
 
 ## 3. モデルの比較
 
-#### ★ベイズファクター(for a review and a guide to interpreting the Bayes factor, see Kass & Raftery 1995)。
-ベイスファクターは、B(n,n+1) = p(D|M2)/p(D|M1)として書かれる。
+-  **ベイズファクター**(for a review and a guide to interpreting the Bayes factor, see Kass & Raftery 1995)。
+  - ベイスファクターは、B(n,n+1) = p(D|M2)/p(D|M1)として書かれる。
 ここで、分母分子は、∮(Likelihood)×(Prior)dΘ(i.e.全空間積分)として計算できる。これが、「**大きいもの**」を選べば良い。　　
 https://ja.wikipedia.org/wiki/%E3%83%99%E3%82%A4%E3%82%BA%E5%9B%A0%E5%AD%90　　
 
-- ベイズ因子（ベイズいんし、英: Bayes factor）は、ベイズ統計学において、伝統的統計学の仮説検定に代わる方法として用いられる数値である。
+    - ベイズ因子（ベイズいんし、英: Bayes factor）は、ベイズ統計学において、伝統的統計学の仮説検定に代わる方法として用いられる数値である。
 データベクトルx に基づいて2つの数学的モデル M1 と M2 のどちらかを選択する問題を考える。
 この方法は尤度比検定あるいは最尤法に似ているが、尤度（モデルあるいは母数を定数とし、それを条件とする確率変数x の条件付確率のこと）を最大化するのでなく、母数を確率変数とし、それに対して平均値をとってから最大化するところが違う。
 
-- 基準は以下より、、  
+    - 基準は以下より、、  
 https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf　　  
 簡単な例(広島カープ)を使って解説　　  
 https://www.slideshare.net/kazutantan/bayes-factor　　
 
-- ただし、ほとんどの場合、ベイズファクターを計算するのは、困難である。よって、BIC条件などが基準んい使われる。これを最小化するように、パラメータを選べば良い。パラメータで記述されたモデルのクラスからモデルを選択する基準．Schwarz情報量規準とも呼ばれる． k 個のパラメータをもつ分布 f(x|θ) に従って N 個のデータがサンプルされているとき，次式を最大化するモデルを選択する。ただし，Pr[{x}N|θ] は尤度。(参考　http://ibisforest.org/index.php?BIC　)  
+    - ただし、ほとんどの場合、ベイズファクターを計算するのは、困難である。よって、BIC条件などが基準んい使われる。これを最小化するように、パラメータを選べば良い。パラメータで記述されたモデルのクラスからモデルを選択する基準．Schwarz情報量規準とも呼ばれる． k 個のパラメータをもつ分布 f(x|θ) に従って N 個のデータがサンプルされているとき，次式を最大化するモデルを選択する。ただし，Pr[{x}N|θ] は尤度。(参考　http://ibisforest.org/index.php?BIC　)  
 ```
 BIC=−2log(Pr[{x}N|θ])+klogN  
 ```
 
 
-#### ★Predictive methods
+- **Predictive methods**
 
-- Bayesian methodも、predictive methodも、利点と欠点の両方を備えている。もし、事前分布がよく正当化されているのであれば、bayesian factorを比較するのが良い。一方、もし我々の目的が、将来のデータに対する正確な予言であるならば、predictive methodがベターであろう。　　
+  - Bayesian methodも、predictive methodも、利点と欠点の両方を備えている。もし、事前分布がよく正当化されているのであれば、bayesian factorを比較するのが良い。一方、もし我々の目的が、将来のデータに対する正確な予言であるならば、predictive methodがベターであろう。　　
 
 ## 4. MCMCの収束判定(Convergence, i.e., how long should we run an MCMC chain?, see Cowles & Carlin (1996) for review)    
 
@@ -132,38 +132,38 @@ BIC=−2log(Pr[{x}N|θ])+klogN
 
 ## Appendix...関連文献  
 
-パラレルテンパリングをAdaptiveで入れた研究(Araki et al. 2013)  
+- パラレルテンパリングをAdaptiveで入れた研究(Araki et al. 2013)  
 https://www.sciencedirect.com/science/article/pii/S0893608013000415  
 
-Radial Velocityをモデリングする論文  
+- Radial Velocityをモデリングする論文  
 http://adsabs.harvard.edu/abs/2005ApJ...631.1198G  
 http://adsabs.harvard.edu/abs/2005AJ....129.1706F  
 http://adsabs.harvard.edu/abs/2006ApJ...642..505F  
 
-Bayesianモデリングの本  
+- Bayesianモデリングの本  
 http://adsabs.harvard.edu/abs/2005blda.book.....G  
 
-MCMC全体のReview論文  
+- MCMC全体のReview論文  
 http://adsabs.harvard.edu/abs/2017ARA%26A..55..213S  
 
-MCMCによる黒点モデリング論文  
+- MCMCによる黒点モデリング論文  
 http://adsabs.harvard.edu/abs/2006PASP..118.1351C    
 
 > 読んだ感じ、一般に使えるコードを開発しているものの、未だにあまり知られていない？同様に、パラメータに縮退があることは述べられている。ただし、時間変化は解いていないので、そこまですごい研究ではなさそう。
 
 
-MCMCのオープンコード(Corner plotが簡単に書ける)、十数パラメータ位ならこちらで可能か。  　　
+- MCMCのオープンコード(Corner plotが簡単に書ける)、十数パラメータ位ならこちらで可能か。  　　
 http://adsabs.harvard.edu/abs/2013PASP..125..306F  
 > 天文学者が開発したので、この分野には応用がしやすいかもしれない。ただ、少し使った感じ、範囲指定とかは少し厄介か、という印象。加えて、KMRさんは、これはあまり効率が良くないと言っていた。(初期条件をいっぱいおくことで、初期条件依存性などが解消されて結構いいのではないかと思うのだけども。ただし、パラメータが多くなるとそうもいかない。)　　
 
-解析的な黒点モデル論文    
+- 解析的な黒点モデル論文    
 http://adsabs.harvard.edu/abs/2012MNRAS.427.2487K  
 
-黒点パラメータの縮退を議論した論文  
+- 黒点パラメータの縮退を議論した論文  
 http://adsabs.harvard.edu/abs/2013ApJS..205...17W　　　　  
 > 確かに、星のインクリネーションと緯度情報は、「厳密にではないが、エラーの範囲で」縮退する。この論文では、黒点の温度・面積の縮退は述べられてはいるが、定量的に評価はなされていない。黒点面積・温度・緯度・インクリネーションの縮退がどれほどあるか？ケプラーの測光精度ではどれくらい分解できるか？といった評価は、自分ですべきであろう。この自分の評価を正当化させるためにも。
 
-山田さん(植村さんの学生さん)のadaptive MCMCのproceeding(論文は準備中だそうです)　　
+- 山田さん(植村さんの学生さん)のadaptive MCMCのproceeding(論文は準備中だそうです)　　
 http://adsabs.harvard.edu/abs/2017ifs..confE..30Y　　  
 > この論文では、adaptiveの数列を、1/(100+n)遠いているが、これがどうやって決められたのかは気になるところ。  
 
