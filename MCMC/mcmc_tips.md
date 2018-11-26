@@ -92,7 +92,8 @@
 
 ## 3. モデルの比較
 
--  **ベイズファクター**(for a review and a guide to interpreting the Bayes factor, see Kass & Raftery 1995)。
+-  **ベイズファクター**(for a review and a guide to interpreting the Bayes factor, see Kass & Raftery 1995)。  
+
   - ベイスファクターは、B(n,n+1) = p(D|M2)/p(D|M1)として書かれる。
 ここで、分母分子は、∮(Likelihood)×(Prior)dΘ(i.e.全空間積分)として計算できる。これが、「**大きいもの**」を選べば良い。　　
 https://ja.wikipedia.org/wiki/%E3%83%99%E3%82%A4%E3%82%BA%E5%9B%A0%E5%AD%90　　
