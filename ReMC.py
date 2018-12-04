@@ -22,6 +22,7 @@ warnings.filterwarnings('ignore')
 import numpy as np
 import copy
 from multiprocessing import Pool
+import sys;
 #import matplotlib.pyplot as plt
 #:"matplotlib" should be setted if you want to visualize in "jupyter notebook"
 
@@ -81,10 +82,19 @@ def Probability(theta, x, y, thetamin, thetamax, n_loop, inverse_temperature, nu
             #Here, we assume Gaussian-shape spot-origin stellar brightness variations.
             depth += - area*np.exp( - (x - tmin_local_min[jj])**2 / (2 * sigma**2))
 
+    #Q4 = np.array([55184.8777, 55274.7038])-55184
+    #Q5 = np.array([55275.9912, 55370.6600])-55184
+    #Q6 = np.array([55371.9473, 55461.7939])-55184
+    QC = [91.34749999999985, 184.89254999999685]
+
     #Here, diff means the difference between the modeled and original light curves.
-    y = y - np.max(y)
-    diff = (depth-np.mean(depth))/np.mean(depth)
-    diff = diff - np.max(diff)
+    qc = [np.where(x < QC[0]), np.where( (x > QC[0]) & (x < QC[1])), np.where(x > QC[1])]
+    for q in range(3):
+    	y[qc[q]] = y[qc[q]] - np.mean( y[[qc[q]]] )
+    	diff[qc[q]] = (depth[qc[q]]-np.mean(depth[qc[q]]))/np.mean(depth[qc[q]])
+    #y = y - np.max(y)
+    #diff = (depth-np.mean(depth))/np.mean(depth)
+    #diff = diff - np.max(diff)
     
     ##PLOT 
     #if (n_loop % 10 == 0):
@@ -108,10 +118,10 @@ def Probability(theta, x, y, thetamin, thetamax, n_loop, inverse_temperature, nu
 
     #This is a noise level of Kepler light curve which is derived for Kepler-17, but this ~0.1% noise level would be a typical values
     #for all of the Kepler data!!
-    noise = 0.004 
+    noise = 0.001 
     
     #Return Log(Likelihood)
-    p = lp - np.sum( (( (y-diff))**2*inverse_temperature/noise**2 ) )
+    p = lp - np.sum( (( (y-diff))**2*inverse_temperature/noise**2 ) ) - len(x)*(0.5*np.log(2*np.pi) + np.log(noise))
 
     return float(p)
 
@@ -183,22 +193,25 @@ def metropolis(inputs):
         if (i  == 0):
             T_prev = Probability(np.array(current), x, y, thetamin, thetamax, int(visualize), inverse_temperature, number_of_spot)
         T_next = Probability(np.array(candidate), x, y, thetamin, thetamax, -1, inverse_temperature, number_of_spot)
+        #if ((inverse_temperature == 1) & ((loop_number % 100) == 0)): print('Likelihood =', T_next, ', The ratio =', np.exp(T_next-T_prev))
         probability_ratio = np.exp( T_next - T_prev )
 
         if probability_ratio > 1 or probability_ratio > np.random.uniform(0, 1):
             # Update state
             current = copy.copy(candidate)
-            accept_ratio.append(i)
+            accept_ratio.append(loop_number)
             likelihood.append(copy.copy(T_next))
             T_prev = copy.copy(T_next)
             index_accept = 1
+            #if ((inverse_temperature == 1) & ((loop_number % 100) == 0)): print('Accepted!!')
         else:
             index_accept = 0
             likelihood.append(copy.copy(T_prev))
             
         #Adaptive Part: 次のステップの分散(と言うより、ここでは標準偏差)を計算する。
-        bn = 1/(burn_in_adaptive+loop_number) #Araki et al とは少し違うが、これでも十分だと判断
-        #bn = 10/(100+loop_number)
+        #bn = 10/(burn_in_adaptive*0.01 + loop_number) #Araki et al とは少し違うが、これでも十分だと判断
+        #bn = 1/(100+loop_number)
+        bn = (1-np.exp(-loop_number/20000))*(1000/(10000+loop_number))
 
         sigma_prev = copy.copy(sigma)
         sigma = np.abs( ( sigma**2 + bn*( (candidate - mu)**2 - sigma**2 ) )**0.5 )
@@ -207,7 +220,7 @@ def metropolis(inputs):
         if (len(np.where(sigma <= 0)[0]) != 0):
             sigma[np.where(sigma <= 0)[0]] = copy.copy(sigma_prev[np.where(sigma <= 0)[0]])
         scale_parameter_prev = copy.copy(scale_parameter)
-        scale_parameter += bn*(index_accept - 0.15) #Ideal acceptance ratio = 0.234
+        scale_parameter += bn*(index_accept - 0.2) #Ideal acceptance ratio = 0.234
         if (scale_parameter <= 0):
             scale_parameter = copy.copy(scale_parameter_prev)
         #print(loop_number, "分散の最大：",  np.max(sigma), "最小：", np.min(sigma),"スケ：", int(scale_parameter))
@@ -228,6 +241,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     number_of_parameter = number_of_spot*6
     scale_parameter = np.ones(size_replica)
     burn_in_adaptive = int(burn_in*size_simulation)
+    sigma_for_each_replica = np.array(range(size_replica))/size_replica + 1
 
     #Initial t_spot_area_is_max is set to be located along the order (t0<t1<t2<...<tN)
     t_min = thetamin[number_of_spot*parameter_priority]
@@ -242,7 +256,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     theta_prev = theta.tolist()
     #Here, we set the initial inverse_temperature (which will be adaptively modified in every exchange)
     #inverse_temperature = (np.array(range(size_replica, 0, -1)))/size_replica*0.01*100 #等間隔なら、これくらい。
-    inverse_temperature = np.exp(-np.array(range(0, size_replica, 1))) #Ikuta method.
+    inverse_temperature = np.exp(-np.array(range(0, size_replica, 1))/3) #Ikuta method.
     orders = np.array(range(size_replica))
     condition = [copy.copy(orders.tolist())]
     theta_next = []
@@ -268,16 +282,22 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
         theta_random = np.random.uniform(thetamin, thetamax)
         theta_random[(number_of_spot*parameter_priority):(number_of_spot*(parameter_priority+1))] = copy.copy(t_step[:])
         theta_prev.extend( copy.copy( theta_random.tolist() ) )
-        sigma0list.extend( sigma0.tolist() )
+        sigma_init_for_each_replica = sigma_for_each_replica[jj+1]*sigma0
+        sigma0list.extend( sigma_init_for_each_replica.tolist() )
     
     sigma = np.array(sigma0list)
     mu = np.array(copy.copy(theta_prev) )
     
     for kk in range( int(size_simulation/frequency_exchange) ):
         #初期化
-        if ((kk % 1000) == 0): print("Repluca Routine: No. ", kk)
+        #if ((kk % 1000) == 0): print("Repluca Routine: No. ", kk)
         theta_next = []
         
+        if ( ( ( (kk*frequency_exchange) % 1000) == 0 ) & ( kk*frequency_exchange >= 5000 ) ):
+            accept_ratio_print = np.array(accept_ratio)
+            print("loop number: ", kk*frequency_exchange, " | acceptance ratio: ", int(len(np.where(accept_ratio_print >= (kk*frequency_exchange*(1 - burn_in)) )[0])/(kk*frequency_exchange*burn_in)*100), '% | L: ', int(likelihood[len(likelihood[:])-1]) )
+             
+
         #レプリカ数に応じて、**並行して**ループを回す。
         inputs = []
         for index_replica in range(size_replica):
@@ -356,22 +376,23 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
             
         #Adaptive MCMC: Change the tempering temperatures
         #an = 1/(1+(kk*frequency_exchange)/(20+10*(index_exchange+1)))+np.log(np.exp(- np.log(inverse_temperature[index_exchange+1]) )+1)
-        an = 1/(burn_in_adaptive+kk*frequency_exchange)
+        #an = 1/(burn_in_adaptive*0.1 + kk*frequency_exchange)
+        an = (1-np.exp(-kk*frequency_exchange/20000))*(500/(10000+kk*frequency_exchange))
         
         #inverse_temperature[index_exchange+1] = np.exp(np.log(copy.copy(inverse_temperature[index_exchange+1])) - copy.copy(an)*(1 - 0.5))
         if ( (index_exchange + 1) == (size_replica -1) ):
-            next_temperature = np.exp(np.log(copy.copy(inverse_temperature[index_exchange+1])) - copy.copy(an)*(a_parallel_index - 0.5))
+            next_temperature = np.exp(np.log(inverse_temperature[index_exchange+1]) - an*(a_parallel_index - 0.5))
             prev_temperature_max = inverse_temperature[index_exchange]
             if ( next_temperature < prev_temperature_max ):
-                inverse_temperature[index_exchange+1] = np.exp(np.log(copy.copy(inverse_temperature[index_exchange+1])) - copy.copy(an)*(a_parallel_index - 0.5))
+                inverse_temperature[index_exchange+1] = np.exp(np.log(inverse_temperature[index_exchange+1]) - an*(a_parallel_index - 0.5))
             else:
                 inverse_temperature[index_exchange+1] = 0.9*prev_temperature_max
         else:
-            next_temperature = np.exp(np.log(copy.copy(inverse_temperature[index_exchange+1])) - copy.copy(an)*(a_parallel_index - 0.5))
+            next_temperature = np.exp(np.log(inverse_temperature[index_exchange+1]) - an*(a_parallel_index - 0.5))
             prev_temperature_min = inverse_temperature[index_exchange+2]
             prev_temperature_max = inverse_temperature[index_exchange]
             if ( (next_temperature > prev_temperature_min) & (next_temperature < prev_temperature_max) ):
-                inverse_temperature[index_exchange+1] = np.exp(np.log(copy.copy(inverse_temperature[index_exchange+1])) - copy.copy(an)*(a_parallel_index - 0.5))
+                inverse_temperature[index_exchange+1] = np.exp(np.log(inverse_temperature[index_exchange+1]) - an*(a_parallel_index - 0.5))
             elif ( (next_temperature <= prev_temperature_min) ):
                 inverse_temperature[index_exchange+1] = 0.99*prev_temperature_min+0.01*prev_temperature_max
             elif ( (next_temperature >= prev_temperature_max) ):
@@ -397,8 +418,8 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
 
 ##Parameter tuning is one of the most important task!!
 def input_parameter(amax, emerge, decay, period, t_max, t_min, number_of_spot):
-    sigma = np.hstack((np.ones(number_of_spot)*0.1, np.ones(number_of_spot)*0.01*period, np.ones(number_of_spot)*0.1, np.ones(number_of_spot)*0.1, np.ones(number_of_spot)*0.02, np.ones(number_of_spot)*3))
-    thetamin = np.hstack((np.log(amax*np.ones(number_of_spot)*0.01), np.ones(number_of_spot)*0, np.log(emerge*np.ones(number_of_spot)*0.01), np.log(-decay*np.ones(number_of_spot)*0.01), period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
+    sigma = np.hstack((np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001*period, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.0001, np.ones(number_of_spot)*0.05))
+    thetamin = np.hstack((np.log(amax*np.ones(number_of_spot)*0.05), np.ones(number_of_spot)*0, np.log(emerge*np.ones(number_of_spot)*0.01), np.log(-decay*np.ones(number_of_spot)*0.01), period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
     thetamax = np.hstack((np.log(amax*np.ones(number_of_spot)*5), np.ones(number_of_spot)*period, np.log(emerge*np.ones(number_of_spot)*100), np.log(-decay*np.ones(number_of_spot)*100), period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
     return thetamin, thetamax, sigma
 
@@ -408,10 +429,7 @@ def bayesian_factor_calculator(thetamin, thetamax, theta):
 	return 0
 
 
+def BIC(likelihood, number_of_observation, number_of_parameter):
+	return - 2*np.log(np.max(likelihood)) + number_of_parameter*np.log(number_of_observation)
 
-
-
-
-
-
-
+#def WBIC()
