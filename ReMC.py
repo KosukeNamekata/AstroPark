@@ -74,7 +74,7 @@ def Probability(theta, x, y, thetamin, thetamax, n_loop, inverse_temperature, nu
 
     #Here, we made the spot areal temporal evolutions by "spotcandidate2" method.
     for ii in range(number_of_spot):
-        area = spotcandedate2(x, np.where(abs(x-t_max_area[ii]) == np.min(abs(x-t_max_area[ii])))[0][0], emerge[ii]*amax[ii], decay[ii]*amax[ii], amax[ii])
+        area = spotcandedate2(x, np.where(abs(x-t_max_area[ii]) == np.min(abs(x-t_max_area[ii])))[0][0], emerge[ii], decay[ii], amax[ii])
         tmin = np.zeros(number_of_local_min)
         tmin = (np.array(range(number_of_local_min))-int(number_of_local_min*0.5))*rot_period[ii] + t_max[ii]
         tmin_local_min = tmin[np.where( (tmin > timespan[0]) & (tmin < timespan[1]))[0]]
@@ -211,7 +211,7 @@ def metropolis(inputs):
         #Adaptive Part: 次のステップの分散(と言うより、ここでは標準偏差)を計算する。
         #bn = 10/(burn_in_adaptive*0.01 + loop_number) #Araki et al とは少し違うが、これでも十分だと判断
         #bn = 1/(100+loop_number)
-        bn = (1-np.exp(-loop_number/20000))*(1000/(10000+loop_number))
+        bn = (1-np.exp(-loop_number/100000))*(10/(10000+loop_number))
 
         sigma_prev = copy.copy(sigma)
         sigma = np.abs( ( sigma**2 + bn*( (candidate - mu)**2 - sigma**2 ) )**0.5 )
@@ -256,23 +256,28 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     theta_prev = theta.tolist()
     #Here, we set the initial inverse_temperature (which will be adaptively modified in every exchange)
     #inverse_temperature = (np.array(range(size_replica, 0, -1)))/size_replica*0.01*100 #等間隔なら、これくらい。
-    inverse_temperature = np.exp(-np.array(range(0, size_replica, 1))/3) #Ikuta method.
+    inverse_temperature = np.exp(-np.array(range(0, size_replica, 1))) #Ikuta method.
     orders = np.array(range(size_replica))
     condition = [copy.copy(orders.tolist())]
     theta_next = []
     theta_next_tentative = []
     accept_ratio = []
     likelihood = []
+    likelihood_threshold = -37000
+    likelihood_now = -1000000
     
     #If you want to see the fitted results during simulation, then, you can see (not yey adapted)
     visualize = np.ones(size_replica)*(-1)
     visualize[0] = 0
+    q = 0
+    kk = 0
     
     #cdef list current = theta.tolist() 
     sample = []
     sample.append(theta.tolist()[0:(len(thetamin))])
     likelihood.append(-np.inf)
     
+    #ここで初期値を決定している
     for jj in range(size_replica-1):
         #t_step = np.random.uniform(thetamin[number_of_spot*5: number_of_spot*6], thetamax[number_of_spot*5: number_of_spot*6])
         #t_step.sort()
@@ -288,15 +293,20 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     sigma = np.array(sigma0list)
     mu = np.array(copy.copy(theta_prev) )
     
-    for kk in range( int(size_simulation/frequency_exchange) ):
+    #ここからMCMC chainが始まる。
+    while (q <=  (size_simulation/frequency_exchange) ):
+        #range( int(size_simulation/frequency_exchange) )
         #初期化
         #if ((kk % 1000) == 0): print("Repluca Routine: No. ", kk)
         theta_next = []
         
-        if ( ( ( (kk*frequency_exchange) % 1000) == 0 ) & ( kk*frequency_exchange >= 5000 ) ):
+        if ( (((kk*frequency_exchange) % 1000) == 0) & (kk > 0) ):
             accept_ratio_print = np.array(accept_ratio)
-            print("loop number: ", kk*frequency_exchange, " | acceptance ratio: ", int(len(np.where(accept_ratio_print >= (kk*frequency_exchange*(1 - burn_in)) )[0])/(kk*frequency_exchange*burn_in)*100), '% | L: ', int(likelihood[len(likelihood[:])-1]) )
-             
+            if (q != 0):
+                print("loop number: ", kk*frequency_exchange, '% | L: ', int(likelihood_now[0]),' | q: ', q )
+            else:
+                print("loop number: ", kk*frequency_exchange, " | acceptance ratio: ", int(len(np.where(accept_ratio_print >= (kk*frequency_exchange*(1 - burn_in)) )[0])/(kk*frequency_exchange*burn_in)*100), '% | L: ', int(likelihood_now[0]),' | q: ', q )
+            
 
         #レプリカ数に応じて、**並行して**ループを回す。
         inputs = []
@@ -318,18 +328,22 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
             theta_next_tentative, accept_ratio_tentative, sigma_tentative, mu_tentative, scale_parameter[index_replica], likelihood_tentative, invs = copy.copy(outputs[ss])
             #theta_next_tentative, accept_ratio_tentative, sigma_tentative, mu_tentative, scale_parameter[index_replica] 
 
-            #ここで、求めたい逆温度T=1のサンプルのみ全て記憶する
-            if (index_replica == 0):
+            
+            if (index_replica == 0): #ここで、求めたい逆温度T=1のサンプルのみ全て記憶する。
                 theta_next = theta_next_tentative[len(theta_next_tentative)-1]
-                for mm in range(len(theta_next_tentative)):
-                    #print(len(theta_next_tentative))
-                    sample.append( copy.copy(theta_next_tentative[mm]) )
-                likelihood.extend( likelihood_tentative )
-                accept_ratio.extend( accept_ratio_tentative )
+                likelihood_now = copy.copy(likelihood_tentative)
+                
+                if ( (likelihood_now[0] >= likelihood_threshold) or (q >= 1)): #十分高いLikelihoodでないと、記憶しない
+                    for mm in range(len(theta_next_tentative)):
+                        sample.append( copy.copy(theta_next_tentative[mm]) )
+                    likelihood.extend( likelihood_tentative )
+                    accept_ratio.extend( accept_ratio_tentative )
+                    q += 1
+                
                 mu[index_replica*number_of_parameter:(index_replica+1)*number_of_parameter] = copy.copy(mu_tentative)
                 sigma[index_replica*number_of_parameter:(index_replica+1)*number_of_parameter] = copy.copy(sigma_tentative)
-            #それ以外の場合は、最終形態だけを記憶しておく。
-            else:
+            
+            else: #それ以外の場合は、最終形態だけを記憶しておく。
                 theta_next.extend( (theta_next_tentative[len(theta_next_tentative)-1]) )
         
         #if ( ((kk % frequency_exchange) == 0) &  (kk != 0) ):
@@ -349,7 +363,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
         if (kk == 0):
             condition = [copy.copy(orders.tolist())]
         
-        #パラレルテンパリングの実行部分
+        #パラレルテンパリングの実行部分>>>>>>>>>>>>>>>>>>>>>>>>>>
         if (np.random.uniform(size=1) < np.exp(T1_numerator+T2_numerator-T1_denominator-T2_denominator)):
             #print("Index Exchange is", index_exchange, "Did Echange Occur?-----Yes")
             a_parallel_index = 1
@@ -359,7 +373,8 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
             nb_append = np.where(orders == index_exchange+1)[0][0]
             orders[na_append] = copy.copy(b_append)
             orders[nb_append] = copy.copy(a_append)
-            condition.append(copy.copy(orders.tolist()))
+            if (q >= 1): 
+                condition.append(copy.copy(orders.tolist()))
             
             theta_next[index_exchange*number_of_parameter:(index_exchange+1)*number_of_parameter], theta_next[(index_exchange+1)*number_of_parameter:(index_exchange+2)*number_of_parameter] = copy.copy(theta2),copy.copy(theta1)
             mu[index_exchange*number_of_parameter:(index_exchange+1)*number_of_parameter], mu[(index_exchange+1)*number_of_parameter:(index_exchange+2)*number_of_parameter] = copy.copy(mu2),copy.copy(mu1)
@@ -372,12 +387,14 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
             #print("Index Exchange is", index_exchange, "Did Echange Occur?-----No")
             a_parallel_index=0
             visualize[0] = 1
-            condition.append(copy.copy(orders.tolist()))
+            if (q >= 1):
+                condition.append(copy.copy(orders.tolist()))
+        #パラレルテンパリングの実行部分<<<<<<<<<<<<<<<<<<<<<<<<<<
             
         #Adaptive MCMC: Change the tempering temperatures
         #an = 1/(1+(kk*frequency_exchange)/(20+10*(index_exchange+1)))+np.log(np.exp(- np.log(inverse_temperature[index_exchange+1]) )+1)
         #an = 1/(burn_in_adaptive*0.1 + kk*frequency_exchange)
-        an = (1-np.exp(-kk*frequency_exchange/20000))*(500/(10000+kk*frequency_exchange))
+        an = (1-np.exp(-kk*frequency_exchange/20000))*(100/(10000+kk*frequency_exchange))
         
         #inverse_temperature[index_exchange+1] = np.exp(np.log(copy.copy(inverse_temperature[index_exchange+1])) - copy.copy(an)*(1 - 0.5))
         if ( (index_exchange + 1) == (size_replica -1) ):
@@ -398,17 +415,8 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
             elif ( (next_temperature >= prev_temperature_max) ):
                 inverse_temperature[index_exchange+1] = 0.01*prev_temperature_min+0.99*prev_temperature_max
         
-        if ( ((kk % 100) == -1) & (kk != 0)):
-            plt.figure(figsize=[15,3])
-            for ii in range(size_replica):
-                condition_np = np.array(condition)
-                plt.plot(condition_np[:,ii])
-            plt.ylabel("Replica Number",fontsize=15)
-            plt.xlabel("Excahnge Step Number",fontsize=15)
-            plt.show()
-        
-        #print("inverse_temperature is :", inverse_temperature)
         theta_prev = copy.copy(theta_next)
+        kk += 1
         
     sigma_return = sigma[0:number_of_parameter]*scale_parameter[0]
     return np.array(sample), np.array(accept_ratio), inverse_temperature, np.array(condition), np.array(likelihood), sigma_return
@@ -417,10 +425,10 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
 
 
 ##Parameter tuning is one of the most important task!!
-def input_parameter(amax, emerge, decay, period, t_max, t_min, number_of_spot):
+def input_parameter(period, t_max, t_min, number_of_spot):
     sigma = np.hstack((np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001*period, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.0001, np.ones(number_of_spot)*0.05))
-    thetamin = np.hstack((np.log(amax*np.ones(number_of_spot)*0.05), np.ones(number_of_spot)*0, np.log(emerge*np.ones(number_of_spot)*0.01), np.log(-decay*np.ones(number_of_spot)*0.01), period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
-    thetamax = np.hstack((np.log(amax*np.ones(number_of_spot)*5), np.ones(number_of_spot)*period, np.log(emerge*np.ones(number_of_spot)*100), np.log(-decay*np.ones(number_of_spot)*100), period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
+    thetamin = np.hstack((np.log(np.ones(number_of_spot)*0.001), np.ones(number_of_spot)*0, np.log(np.ones(number_of_spot)*0.00001), np.log(np.ones(number_of_spot)*0.00001), period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
+    thetamax = np.hstack((np.log(np.ones(number_of_spot)*0.05), np.ones(number_of_spot)*period, np.log(np.ones(number_of_spot)*0.1), np.log(np.ones(number_of_spot)*0.1), period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
     return thetamin, thetamax, sigma
 
 
