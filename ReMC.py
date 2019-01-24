@@ -234,8 +234,8 @@ def metropolis(inputs):
 
 
 
-def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, number_of_spot = 5,
-    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4, parameter_priority = 5, burn_in=0.2 ):
+def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, theta_init = None, number_of_spot = 5,
+    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4, parameter_priority = 5, burn_in=0.2):
 
     theta = np.random.uniform(thetamin, thetamax)
     number_of_parameter = number_of_spot*6
@@ -263,9 +263,9 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
     theta_next_tentative = []
     accept_ratio = []
     likelihood = []
-    likelihood_threshold = -37000
+    likelihood_threshold = 0 #-14000 for spot number = 5
     likelihood_now = -1000000
-    
+
     #If you want to see the fitted results during simulation, then, you can see (not yey adapted)
     visualize = np.ones(size_replica)*(-1)
     visualize[0] = 0
@@ -286,6 +286,10 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
 
         theta_random = np.random.uniform(thetamin, thetamax)
         theta_random[(number_of_spot*parameter_priority):(number_of_spot*(parameter_priority+1))] = copy.copy(t_step[:])
+        #If we want to set the initial condition
+        if ((jj == 0) & (theta_init is not None)):
+            theta_random = theta_init
+         
         theta_prev.extend( copy.copy( theta_random.tolist() ) )
         sigma_init_for_each_replica = sigma_for_each_replica[jj+1]*sigma0
         sigma0list.extend( sigma_init_for_each_replica.tolist() )
@@ -302,8 +306,8 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
         
         if ( (((kk*frequency_exchange) % 1000) == 0) & (kk > 0) ):
             accept_ratio_print = np.array(accept_ratio)
-            if (q != 0):
-                print("loop number: ", kk*frequency_exchange, '% | L: ', int(likelihood_now[0]),' | q: ', q )
+            if (q == 0):
+                print("loop number: ", kk*frequency_exchange, ' | L: ', int(likelihood_now[0]),' | q: ', q )
             else:
                 print("loop number: ", kk*frequency_exchange, " | acceptance ratio: ", int(len(np.where(accept_ratio_print >= (kk*frequency_exchange*(1 - burn_in)) )[0])/(kk*frequency_exchange*burn_in)*100), '% | L: ', int(likelihood_now[0]),' | q: ', q )
             
@@ -394,7 +398,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
         #Adaptive MCMC: Change the tempering temperatures
         #an = 1/(1+(kk*frequency_exchange)/(20+10*(index_exchange+1)))+np.log(np.exp(- np.log(inverse_temperature[index_exchange+1]) )+1)
         #an = 1/(burn_in_adaptive*0.1 + kk*frequency_exchange)
-        an = (1-np.exp(-kk*frequency_exchange/20000))*(100/(10000+kk*frequency_exchange))
+        an = (1-np.exp(-kk*frequency_exchange/50000))*(10/(50000+kk*frequency_exchange))
         
         #inverse_temperature[index_exchange+1] = np.exp(np.log(copy.copy(inverse_temperature[index_exchange+1])) - copy.copy(an)*(1 - 0.5))
         if ( (index_exchange + 1) == (size_replica -1) ):
@@ -426,7 +430,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, num
 
 ##Parameter tuning is one of the most important task!!
 def input_parameter(period, t_max, t_min, number_of_spot):
-    sigma = np.hstack((np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001*period, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.0001, np.ones(number_of_spot)*0.05))
+    sigma = 3*np.hstack((np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001*period, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.001, np.ones(number_of_spot)*0.0001, np.ones(number_of_spot)*0.05))
     thetamin = np.hstack((np.log(np.ones(number_of_spot)*0.001), np.ones(number_of_spot)*0, np.log(np.ones(number_of_spot)*0.00001), np.log(np.ones(number_of_spot)*0.00001), period*np.ones(number_of_spot)*0.95, np.ones(number_of_spot)*t_min))
     thetamax = np.hstack((np.log(np.ones(number_of_spot)*0.05), np.ones(number_of_spot)*period, np.log(np.ones(number_of_spot)*0.1), np.log(np.ones(number_of_spot)*0.1), period*np.ones(number_of_spot)*1.05, np.ones(number_of_spot)*t_max))
     return thetamin, thetamax, sigma
@@ -441,3 +445,12 @@ def BIC(likelihood, number_of_observation, number_of_parameter):
 	return - 2*np.log(np.max(likelihood)) + number_of_parameter*np.log(number_of_observation)
 
 #def WBIC()
+
+
+
+
+
+
+
+
+
