@@ -211,7 +211,10 @@ def metropolis(inputs):
         #Adaptive Part: 次のステップの分散(と言うより、ここでは標準偏差)を計算する。
         #bn = 10/(burn_in_adaptive*0.01 + loop_number) #Araki et al とは少し違うが、これでも十分だと判断
         #bn = 1/(100+loop_number)
-        bn = (1-np.exp(-loop_number/100000))*(10/(10000+loop_number))
+        #When Searching
+        bn = (1-np.exp(-loop_number/100000))*(10/(10000+loop_number)) 
+        #When Sampling
+        #bn = (10/(10000+loop_number)) 
 
         sigma_prev = copy.copy(sigma)
         sigma = np.abs( ( sigma**2 + bn*( (candidate - mu)**2 - sigma**2 ) )**0.5 )
@@ -235,7 +238,7 @@ def metropolis(inputs):
 
 
 def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, theta_init = None, number_of_spot = 5,
-    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4, parameter_priority = 5, burn_in=0.2):
+    size_replica = 15, frequency_exchange = 10, core_of_your_computer = 4, parameter_priority = 5, burn_in=0.2, likelihood_threshold = 0):
 
     theta = np.random.uniform(thetamin, thetamax)
     number_of_parameter = number_of_spot*6
@@ -263,7 +266,7 @@ def mcmc_replica_exchange(size_simulation, x, y, sigma0, thetamax, thetamin, the
     theta_next_tentative = []
     accept_ratio = []
     likelihood = []
-    likelihood_threshold = 0 #-14000 for spot number = 5
+    #likelihood_threshold = 0 #-14000 for spot number = 5
     likelihood_now = -1000000
 
     #If you want to see the fitted results during simulation, then, you can see (not yey adapted)
